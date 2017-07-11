@@ -618,15 +618,15 @@ class SerialThroughput:
 
         elif self.mode == "Poll Response":
             self.result_box.insert(INSERT, "Poll Packets Sent         : %d\n" % self.tx_packet_count)
-            self.result_box.insert(INSERT, "Poll Packets Recieved     : %d\n" % self.rx_packet_ok_count)
+            self.result_box.insert(INSERT, "Poll Packets Received     : %d\n" % self.rx_packet_ok_count)
             self.result_box.insert(INSERT, "Response Packets Sent     : %d\n" % self.tx_response_packet_count)
             self.result_box.insert(INSERT, "Response Packets Received : %d\n" % self.rx_response_packet_ok_count)
 
         if len(self.latencies) > 0:
-            self.result_box.insert(INSERT, "First 3 FILO Lantenices :")
+            self.result_box.insert(INSERT, "First 3 FILO Latencies :")
             for l in self.latencies[0:3]:
                 self.result_box.insert(INSERT, " {:.3f}".format(l))
-            self.result_box.insert(INSERT, "\nLast 3 FILO Lantenices  :")
+            self.result_box.insert(INSERT, "\nLast 3 FILO Latencies  :")
             for l in self.latencies[len(self.latencies)-3:]:
                 self.result_box.insert(INSERT, " {:.3f}".format(l))
             if test_finished:
@@ -662,7 +662,7 @@ class SerialThroughput:
                 self.result_box.insert(INSERT, "FILO) First In Last Out.\n")
                 self.result_box.insert(INSERT, "This is the time between the first bit into the transmitter and the last bit out of the receiver, or simply the total time taken to transfer the data.\n\n")
                 self.result_box.insert(INSERT, "LIFO) Last In First Out.\n")
-                self.result_box.insert(INSERT, "This is the time between the last bit into the transmitter and the first bit out of the receiver. Assuming the device is buffering each packet, this gives a measure of the internal transfer speed of the device).")
+                self.result_box.insert(INSERT, "This is the time between the last bit into the transmitter and the first bit out of the receiver. Assuming the device is buffering each packet, this gives a measure of the internal transfer speed of the device.")
                 
     def cancel_test (self):
         self.stop_threads = True
