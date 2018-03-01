@@ -4,6 +4,8 @@ This is a tool for testing the performance of serial links. You can make the fol
 * Latency
 * Poll response latency
 
+The source code to this tool is freely available here: https://github.com/4RF/serial-traffic-generator
+
 # RTS/CTS Flow Control
 With this enabled, the tester will assert the RTS signal and then wait for the CTS signal to be returned before sending any serial data. The RTS signal is de-asserted after each packet has finished being transmitted.
 
