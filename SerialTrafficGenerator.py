@@ -21,7 +21,17 @@ class SerialThroughput:
     def __init__(self):
         self.send_thread = None
         self.receive_thread = None
-        
+
+        # Pipeline variables. Only valid for throughput tests
+        # packet_received: event to syncronize between send and receive threads
+        # packet_received_timeout(seconds): time to wait at sender for response from receiver
+        # pipeline_max: max number of packet between sender and receiver (set to 0 for no pipeline)
+        # pipeline_current: current number of packet between receiver and transmitter
+        self.packet_received = threading.Event()
+        self.packet_received_timeout = 10
+        self.pipeline_max = 2
+        self.pipeline_current = 0
+
         self.start_time = None
         self.last_rx_time = None
         self.end_time = None
@@ -38,7 +48,7 @@ class SerialThroughput:
         
         top.geometry("500x700")
             
-        top.title("4RF Serial Traffic Generator 1.4")
+        top.title("4RF Serial Traffic Generator 1.6")
         
         top.columnconfigure(0, weight=1)
         top.columnconfigure(1, weight=4)
@@ -517,14 +527,43 @@ class SerialThroughput:
         # Record the start time of the test, used to calculate total test time and therefore throughput
         self.start_time = time.clock()
         self.tx_byte_count = 0
+        self.pipeline_current = 0
+        self.packet_received.clear() 
         try:
             for x in range (0, self.packet_count):
                 self.flow_control_tx_start(send_port)
-                
-                send_port.write(packet)
-                # NOTE: Don't use the flush command, as this has a loop with 50ms sleeps in it which will comprimise timing behaviour
-                # send_port.flush()
+                if (self.pipeline_max == 0):
+                    send_port.write(packet)
+                    # NOTE: Don't use the flush command, as this has a loop with 50ms sleeps in it which will comprimise timing behaviour
+                    # send_port.flush()
+                else:
+                    if self.pipeline_current < self.pipeline_max:
+                        #Send packet immediately, if there is room in the pipeline
+                        #print("Sending Packet %d" % (x+1))
+                        send_port.write(packet)
+                    else:
+                        #Wait for receiver thread to set packet_received flag, before sending the packet
+                        while not self.packet_received.isSet():
+                            event_is_set = self.packet_received.wait(self.packet_received_timeout)
+                            #Check if the thread unblocked due to time out, or packet_received set at the receiver
+                            if not event_is_set:
+                                #Time out occured while wating for packet received response from receiver thread
+                                print("Time out occured while wating for packet received flag set at the receiver. Quiting Test..\n")
+                                cancel_test(self)
+                                break
+                            else:
+                                #Flag set at the receiver, now send next packet into the pipeline
+                                #print("After set Sending Packet %d" % (x+1))
+                                send_port.write(packet)
+                                self.packet_received.clear()    
+                                break
+
+                            if self.stop_threads:
+                                break
+
+                #Increment send packet and pipeline count      
                 self.tx_packet_count += 1
+                self.pipeline_current += 1
                 
                 self.flow_control_tx_finish(send_port, tx_delay_deconds)
                 
@@ -550,6 +589,12 @@ class SerialThroughput:
                     break
                 else:
                     self.last_rx_time = time.clock()
+                if self.pipeline_max:
+                    if (self.rx_byte_count % self.packet_size) == 0:
+                        if self.pipeline_current > 0:
+                            self.pipeline_current -= 1
+                        #received bytes equal to one packet size, signal sender task to send more
+                        self.packet_received.set()
         
         self.end_time = time.clock()
         
