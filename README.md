@@ -4,8 +4,6 @@ This is a tool for testing the performance of serial links. You can make the fol
 * Latency
 * Poll response latency
 
-The source code to this tool is freely available here: https://github.com/4RF/serial-traffic-generator
-
 # RTS/CTS Flow Control
 With this enabled, the tester will assert the RTS signal and then wait for the CTS signal to be returned before sending any serial data. The RTS signal is de-asserted after each packet has finished being transmitted.
 
@@ -27,11 +25,13 @@ In this mode, the time taken to send the specified number of packets is measured
 
 Throughput/Latency/Poll Packet Size - Specifies the size of each test packet
 
-Response Packet Size - Ingored for this test mode
+Response Packet Size - Ignored for this test mode
 
 Packet Count - The number of test packets to send
 
 Interpacket Gap - specifies the separated between packets. This separation is what is used by devices under test to delineate individual packets. For this reason this setting must match the configuration of the device being tested.
+
+Timeout - Ignored for this test mode
 
 # Latency
 In this mode, a measurement is taken of the time between when a packet is written to the operating serial buffers of the Sender Port, and when the entire message has been received on the Receiver Port.
@@ -42,16 +42,16 @@ This type of latency measurement is called First In Last Out or FILO latency, an
 
 Throughput/Latency/Poll Packet Size - Specifies the size of each test packet
 
-Response Packet Size - Ingored for this test mode
+Response Packet Size - Ignored for this test mode
 
 Packet Count - The number of test packets to send
 
-Interpacket Gap - Ingored for this test mode
+Interpacket Gap - Ignored for this test mode
 
-# Poll Response
-In this mode, a packet is sent from the Sender Port. Once it has been fully received by the Receiver Port, another packet is sent by the Receiver Port.
+Timeout - The maximum length of time to wait for packet
 
-The latency measurement is the time between when a packet is written to the serial buffers of the Sender Port, and when the entire response message has been received back on the Sender Port.
+# Round Trip
+In this mode, a packet is sent from the Sender Port. Once it has been fully received by the Receiver Port, another packet is sent by the Receiver Port. The latency measurement is taken from the time between when a packet is written to the operating serial buffers of the Sender Port, and when the entire response message has been received back on the Sender Port.
 
 If RTS/CTS Flow Control is selected, then the time measurement starts when the RTS signal is asserted. This means the time delay before the CTS signal is asserted by the device is also counted.
 
@@ -63,4 +63,6 @@ Response Packet Size - Specifies the size of each test packet returned on the Re
 
 Packet Count - The number of test packets to send
 
-Interpacket Gap - Ingored for this test mode
+Interpacket Gap - Ignored for this test mode
+
+Timeout - The maximum length of time to wait for a packet to be sent
