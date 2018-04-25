@@ -4,6 +4,8 @@ This is a tool for testing the performance of serial links. You can make the fol
 * Latency
 * Poll response latency
 
+The source code to this tool is freely available here: https://github.com/4RF/serial-traffic-generator
+
 # RTS/CTS Flow Control
 With this enabled, the tester will assert the RTS signal and then wait for the CTS signal to be returned before sending any serial data. The RTS signal is de-asserted after each packet has finished being transmitted.
 
@@ -50,7 +52,7 @@ Interpacket Gap - Ignored for this test mode
 
 Timeout - The maximum length of time to wait for packet
 
-# Round Trip
+# Poll Response
 In this mode, a packet is sent from the Sender Port. Once it has been fully received by the Receiver Port, another packet is sent by the Receiver Port. The latency measurement is taken from the time between when a packet is written to the operating serial buffers of the Sender Port, and when the entire response message has been received back on the Sender Port.
 
 If RTS/CTS Flow Control is selected, then the time measurement starts when the RTS signal is asserted. This means the time delay before the CTS signal is asserted by the device is also counted.
