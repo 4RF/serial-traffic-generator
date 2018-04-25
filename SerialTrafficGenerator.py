@@ -1,6 +1,6 @@
 # Serial Traffic Generator
 #
-# Copyright (c) 2016-2017 4RF
+# Copyright (c) 2016-2018 4RF
 #
 # This file is subject to the terms and conditions of the GNU General Public
 # License Version 3.  See the file "LICENSE" in the main directory of this
@@ -48,7 +48,7 @@ class SerialThroughput:
         
         top.geometry("500x700")
             
-        top.title("4RF Serial Traffic Generator 1.6")
+        top.title("4RF Serial Traffic Generator 1.7")
         
         top.columnconfigure(0, weight=1)
         top.columnconfigure(1, weight=4)
@@ -205,11 +205,21 @@ class SerialThroughput:
             tx_delay_value.set(float(val))
         Entry (top, textvariable=tx_delay_value).grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
         currentrow += 1
+        
+        Label (top, text="Timeout (ms)").grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
+
+        read_timeout = IntVar()
+        read_timeout.set(5000)
+        if confsection:
+            val = confsection.get('timeout', '5000')
+            read_timeout.set(int(val))
+        Entry (top, textvariable=read_timeout).grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
+        currentrow += 1
 
         self.start_stop_button = Button (top, text="Start", justify=CENTER, bd=6, 
                                     command = lambda : self.start_stop_click(send.get(), recv.get(), baud.get(), dBits.get(), prty.get(), 
                                                             sBits.get(), size_value.get(), response_size_value.get(), float(tx_delay_value.get()), 
-                                                            cnt_value.get(), mode.get()))
+                                                            cnt_value.get(), mode.get(), read_timeout.get()))
 
         self.start_stop_button.grid(row=currentrow, column=0, columnspan=2)
         currentrow += 1
@@ -258,7 +268,7 @@ class SerialThroughput:
 
         return tx_delay_seconds
 
-    def start_stop_click(self, sender_port, receiver_port, baud_rate, data_bits, parity, stop_bits, packet_size, response_size, tx_delay_chars, packet_count, mode):
+    def start_stop_click(self, sender_port, receiver_port, baud_rate, data_bits, parity, stop_bits, packet_size, response_size, tx_delay_chars, packet_count, mode, timeout):
         if (self.send_thread and self.send_thread.is_alive()) or (self.receive_thread and self.receive_thread.is_alive()):
             self.cancel_test()
             self.start_stop_button.config(text="Start")
@@ -279,8 +289,10 @@ class SerialThroughput:
                 'response_packet_size' : response_size,
                 'packet_count' : packet_count,
                 'inter_packet_gap' : tx_delay_chars,
-                'mode' : mode
+                'mode' : mode,
+                'timeout' : timeout
             }
+            self.packet_received_timeout = timeout + 0.1
             if self.cts_rts.get() == 1:
                 config['config']['flow_control'] = 'True'
             else:
@@ -348,11 +360,11 @@ class SerialThroughput:
                     self.use_flow_control = False
                 
                 # Connect to the Serial ports
-                sender = serial.Serial (sender_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=10, write_timeout=10)
+                sender = serial.Serial (sender_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout, write_timeout=10)
                 if receiver_port == sender_port:
                     receiver = sender
                 else:
-                    receiver = serial.Serial (receiver_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=10)
+                    receiver = serial.Serial (receiver_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout)
                 
                 # Ensure that RTS signal is innitially low for both serial ports. This is often used as a key-up signal
                 # of half duplex devices and we want to ensure that sender is in receive/tx idle state at start, and receiver 
@@ -548,8 +560,9 @@ class SerialThroughput:
                             #Check if the thread unblocked due to time out, or packet_received set at the receiver
                             if not event_is_set:
                                 #Time out occured while wating for packet received response from receiver thread
-                                print("Time out occured while wating for packet received flag set at the receiver. Quiting Test..\n")
-                                cancel_test(self)
+                                if not self.stop_threads:
+                                    print("Time out occured while wating for packet received flag set at the receiver. Quiting Test..\n")
+                                    cancel_test(self)
                                 break
                             else:
                                 #Flag set at the receiver, now send next packet into the pipeline
