@@ -261,7 +261,11 @@ class SerialThroughput:
         # has been written into the tx buffer, windows will transmit all characters without any gaps. This means
         # The application can wait the number of bytes * bits per bytes to find the end point of the packet.
         if (self.tx_delay_chars > 0) or self.use_flow_control:
-            tx_delay_seconds = (self.tx_delay_chars + len) * self.bits_per_char() / self.baud_rate
+            tx_delay_data = len * self.bits_per_char() / self.baud_rate
+            tx_delay_ifg = self.tx_delay_chars * self.bits_per_char() / self.baud_rate
+            if tx_delay_ifg < 0.001:
+                tx_delay_ifg = 0.001
+            tx_delay_seconds = tx_delay_data + tx_delay_ifg
         else:
             tx_delay_seconds = 0
 
@@ -421,6 +425,9 @@ class SerialThroughput:
         # A delay is required between each write to ensure the requested inter-packet gap is introduced
         sleep_duration = tx_delay_deconds - (time.clock() - self.tx_start)
         
+        if sleep_duration < 0.001:
+            sleep_duration = 0.001
+
         # Only use sleep for longer delays (windows only provids 1ms resolution sleep)
         # NOTE: Assumption of 1ms resolution may only be valid for recent windows versions (eg windows 7, 8, and 10)
         if sleep_duration >= 0.002:
