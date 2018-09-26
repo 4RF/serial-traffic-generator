@@ -401,13 +401,6 @@ class SerialThroughput:
                 self.result_box.insert(END, "Error running test. Check serial ports are not in use.\n")
                 self.cancel_test()
         
-    def stop(self):
-        self.stop_threads = True
-        if self.receive_thread != None:
-            self.receive_thread.join()
-        if self.send_thread != None:
-            self.send_thread.join()
-    
     def flow_control_tx_start(self, port):
         # When flow control is enabled, we set the RTS signal (to key up external radio, RS485 device etc)
         # and then wait for CTS signal to confirm that device under test is ready to transmit
@@ -547,7 +540,6 @@ class SerialThroughput:
         
         # Record the start time of the test, used to calculate total test time and therefore throughput
         self.start_time = time.clock()
-        self.tx_byte_count = 0
         self.pipeline_current = 0
         try:
             for x in range (0, self.packet_count):
