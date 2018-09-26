@@ -27,10 +27,9 @@ class SerialThroughput:
         # packet_received_timeout(seconds): time to wait at sender for response from receiver
         # pipeline_max: max number of packet between sender and receiver (set to 0 for no pipeline)
         # pipeline_current: current number of packet between receiver and transmitter
-        self.packet_received = threading.Event()
+        self.packet_received = None
         self.packet_received_timeout = 10
         self.pipeline_max = 2
-        self.pipeline_current = 0
 
         self.start_time = None
         self.last_rx_time = None
@@ -374,6 +373,7 @@ class SerialThroughput:
             
                 # Create threads for sending and receiving
                 if mode == "Throughput":
+                    self.packet_received = threading.Semaphore(self.pipeline_max)
                     self.send_thread = threading.Thread(target=self.send_data_thread, args=(sender,))
                     self.receive_thread = threading.Thread(target=self.read_data_thread, args=(receiver,))
                     
@@ -540,46 +540,18 @@ class SerialThroughput:
         self.start_time = time.clock()
         self.tx_byte_count = 0
         self.pipeline_current = 0
-        self.packet_received.clear() 
         try:
             for x in range (0, self.packet_count):
+                self.packet_received.acquire(True)
                 self.flow_control_tx_start(send_port)
-                if (self.pipeline_max == 0):
-                    send_port.write(packet)
-                    # NOTE: Don't use the flush command, as this has a loop with 50ms sleeps in it which will comprimise timing behaviour
-                    # send_port.flush()
-                else:
-                    if self.pipeline_current < self.pipeline_max:
-                        #Send packet immediately, if there is room in the pipeline
-                        #print("Sending Packet %d" % (x+1))
-                        send_port.write(packet)
-                    else:
-                        #Wait for receiver thread to set packet_received flag, before sending the packet
-                        while not self.packet_received.isSet():
-                            event_is_set = self.packet_received.wait(self.packet_received_timeout)
-                            #Check if the thread unblocked due to time out, or packet_received set at the receiver
-                            if not event_is_set:
-                                #Time out occured while wating for packet received response from receiver thread
-                                if not self.stop_threads:
-                                    print("Time out occured while wating for packet received flag set at the receiver. Quiting Test..\n")
-                                    cancel_test(self)
-                                break
-                            else:
-                                #Flag set at the receiver, now send next packet into the pipeline
-                                #print("After set Sending Packet %d" % (x+1))
-                                send_port.write(packet)
-                                self.packet_received.clear()    
-                                break
-
-                            if self.stop_threads:
-                                break
-
-                #Increment send packet and pipeline count      
+                
+                send_port.write(packet)
+                
+                #Increment send packet count
                 self.tx_packet_count += 1
-                self.pipeline_current += 1
-                
-                self.flow_control_tx_finish(send_port, tx_delay_deconds)
-                
+
+                self.flow_control_tx_finish(send_port, tx_delay_seconds)
+
                 if self.stop_threads:
                     break
             
@@ -604,10 +576,7 @@ class SerialThroughput:
                     self.last_rx_time = time.clock()
                 if self.pipeline_max:
                     if (self.rx_byte_count % self.packet_size) == 0:
-                        if self.pipeline_current > 0:
-                            self.pipeline_current -= 1
-                        #received bytes equal to one packet size, signal sender task to send more
-                        self.packet_received.set()
+                        self.packet_received.release()
         
         self.end_time = time.clock()
         
@@ -724,12 +693,24 @@ class SerialThroughput:
                 
     def cancel_test (self):
         self.stop_threads = True
+        if self.packet_received:
+            self.packet_received.release()
         if self.send_thread:
-            self.send_thread.join(5)
-            self.send_thread = None
+            if self.send_thread.isAlive():
+                self.send_thread.join(self.packet_received_timeout * 2)
+            if self.send_thread.isAlive():
+                print("Error stopping send thread")
+            else:
+                self.send_thread = None
         if self.receive_thread:
-            self.receive_thread.join(5)
-            self.receive_thread = None
+            if self.receive_thread.isAlive():
+                self.receive_thread.join(self.packet_received_timeout * 2)
+            if self.receive_thread.isAlive():
+                print("Error stopping receive thread")
+            else:
+                self.receive_thread = None
+
+        return (self.send_thread == None) and (self.receive_thread == None)
     
     def execute (self):
         self.tktop.mainloop()
