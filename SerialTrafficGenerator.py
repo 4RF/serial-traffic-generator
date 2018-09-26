@@ -291,7 +291,7 @@ class SerialThroughput:
                 'mode' : mode,
                 'timeout' : timeout
             }
-            self.packet_received_timeout = timeout + 0.1
+            self.packet_received_timeout = timeout/1000.0 + 0.1
             if self.cts_rts.get() == 1:
                 config['config']['flow_control'] = 'True'
             else:
@@ -359,11 +359,11 @@ class SerialThroughput:
                     self.use_flow_control = False
                 
                 # Connect to the Serial ports
-                sender = serial.Serial (sender_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout, write_timeout=10)
+                sender = serial.Serial (sender_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout/1000.0, write_timeout=10)
                 if receiver_port == sender_port:
                     receiver = sender
                 else:
-                    receiver = serial.Serial (receiver_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout)
+                    receiver = serial.Serial (receiver_port, baud_rate, rtscts=False, stopbits=sb, bytesize=bs, parity=pm, timeout=timeout/1000.0)
                 
                 # Ensure that RTS signal is innitially low for both serial ports. This is often used as a key-up signal
                 # of half duplex devices and we want to ensure that sender is in receive/tx idle state at start, and receiver 
