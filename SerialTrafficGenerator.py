@@ -269,9 +269,11 @@ class SerialThroughput:
 
     def start_stop_click(self, sender_port, receiver_port, baud_rate, data_bits, parity, stop_bits, packet_size, response_size, tx_delay_chars, packet_count, mode, timeout):
         if (self.send_thread and self.send_thread.is_alive()) or (self.receive_thread and self.receive_thread.is_alive()):
-            self.cancel_test()
-            self.start_stop_button.config(text="Start")
-            self.result_box.insert(END, "\nTest Cancelled.\n")
+            if self.cancel_test():
+                self.start_stop_button.config(text="Start")
+                self.result_box.insert(END, "\nTest Cancelled.\n")
+            else:
+                self.result_box.insert(END, "\nTest Cancel Failed!\n")
         else:
             self.stop_threads = False
             self.mode = mode
