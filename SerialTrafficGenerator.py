@@ -421,9 +421,9 @@ class SerialThroughput:
         self.tx_start = time.clock()
     
     
-    def flow_control_tx_finish(self, port, tx_delay_deconds):
+    def flow_control_tx_finish(self, port, tx_delay_seconds):
         # A delay is required between each write to ensure the requested inter-packet gap is introduced
-        sleep_duration = tx_delay_deconds - (time.clock() - self.tx_start)
+        sleep_duration = tx_delay_seconds - (time.clock() - self.tx_start)
         
         if sleep_duration < 0.001:
             sleep_duration = 0.001
@@ -434,7 +434,7 @@ class SerialThroughput:
             time.sleep(sleep_duration - 0.001)
         
         # Busy wait for any remaining time, which gives good accuracy for small delays
-        sleep_duration = tx_delay_deconds - (time.clock() - self.tx_start)
+        sleep_duration = tx_delay_seconds - (time.clock() - self.tx_start)
         if sleep_duration > 0:
             # For shorter delays, use busy wait loop
             s = time.clock()
@@ -451,7 +451,7 @@ class SerialThroughput:
         for x in range(0, self.packet_size):
             packet[x] = random.randint(0,255)
             
-        tx_delay_deconds = self.calc_packet_tx_delay(self.packet_size)
+        tx_delay_seconds = self.calc_packet_tx_delay(self.packet_size)
         
         try:
             for x in range (0, self.packet_count):
@@ -465,7 +465,7 @@ class SerialThroughput:
                 send_port.write(packet)
                 self.tx_packet_count += 1
                 
-                self.flow_control_tx_finish(send_port, tx_delay_deconds)
+                self.flow_control_tx_finish(send_port, tx_delay_seconds)
                 
                 data = receive_port.read(self.packet_size)
                 
@@ -483,7 +483,7 @@ class SerialThroughput:
             pass
 
     def poll_response_thread(self, polling_port, responder_port):
-        tx_delay_deconds = self.calc_packet_tx_delay(self.packet_size)
+        tx_delay_seconds = self.calc_packet_tx_delay(self.packet_size)
         tx_response_delay_deconds = self.calc_packet_tx_delay(self.response_size)
     
         # Build the packet based on the size passed
@@ -507,7 +507,7 @@ class SerialThroughput:
                 polling_port.write(packet)
                 self.tx_packet_count += 1
                 
-                self.flow_control_tx_finish(polling_port, tx_delay_deconds)
+                self.flow_control_tx_finish(polling_port, tx_delay_seconds)
                 
                 data = responder_port.read(self.packet_size)
                 
@@ -538,7 +538,7 @@ class SerialThroughput:
             pass
 
     def send_data_thread(self, send_port):
-        tx_delay_deconds = self.calc_packet_tx_delay(self.packet_size)
+        tx_delay_seconds = self.calc_packet_tx_delay(self.packet_size)
         
         # Build the packet based on the size passed
         packet = bytearray(self.packet_size)
