@@ -105,6 +105,7 @@ class SerialThroughput:
         combo = ttk.Combobox (top, textvariable=mode)
         combo['values'] = [ "Throughput", "Latency", "Poll Response" ]
         combo.current(0)
+        combo.bind("<<ComboboxSelected>>", lambda _ : self.mode_combo_changed(mode.get()))
         if confsection:
             val = confsection.get('mode', '')
             if val in combo['values']:
@@ -178,7 +179,7 @@ class SerialThroughput:
         ttk.Checkbutton(top, text="RTS/CTS Flow Control", variable=self.cts_rts).grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
         currentrow += 1
 
-        Label (top, text="Throughput/Latency/Poll Packet Size").grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
+        Label (top, text="Packet Size").grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
 
         size_value = IntVar()
         size_value.set(512)
@@ -188,15 +189,20 @@ class SerialThroughput:
         Entry (top, textvariable=size_value).grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
         currentrow += 1
         
-        Label (top, text="Response Packet Size").grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
+        self.response_packet_size_label = Label (top, text="Response Packet Size")
+        self.response_packet_size_label.grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
 
         response_size_value = IntVar()
         response_size_value.set(512)
         if confsection:
             val = confsection.get('response_packet_size', '512')
             response_size_value.set(int(val))
-        Entry (top, textvariable=response_size_value).grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
+        self.response_packet_size_entry = Entry (top, textvariable=response_size_value)
+        self.response_packet_size_entry.grid(row=currentrow, column=1, padx=5, pady=5, sticky='W')
         currentrow += 1
+
+        self.response_packet_size_label.grid_remove()
+        self.response_packet_size_entry.grid_remove()
 
         Label (top, text="Packet Count").grid(row=currentrow, column=0, padx=5, pady=5, sticky='E')
 
@@ -243,6 +249,14 @@ class SerialThroughput:
         self.tktop = top
         
         top.after(100, self.check_completion)
+
+    def mode_combo_changed(self, mode):
+        if mode == "Poll Response":
+            self.response_packet_size_label.grid()
+            self.response_packet_size_entry.grid()
+        else:
+            self.response_packet_size_label.grid_remove()
+            self.response_packet_size_entry.grid_remove()
 
     def serial_ports(self):
         result = []
