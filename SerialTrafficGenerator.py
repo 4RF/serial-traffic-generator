@@ -49,7 +49,7 @@ class SerialThroughput:
         
         top.geometry("500x700")
             
-        top.title("4RF Serial Traffic Generator 1.7")
+        top.title("4RF Serial Traffic Generator 1.8")
 
         try:
             # PyInstaller creates a temp folder and stores path in _MEIPASS
