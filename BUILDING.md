@@ -10,4 +10,4 @@ The script can then be run with the following command:
 Alternatively the application can be compiled into a standalone executable with the following commands:
 
     pip install pyinstaller
-    pyinstaller --onefile --windowed SerialTrafficGenerator.py
+    pyinstaller --onefile --windowed --icon=serialtrafficgenerator.ico --add-data serialtrafficgenerator.ico;. SerialTrafficGenerator.py
