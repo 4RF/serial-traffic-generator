@@ -17,6 +17,7 @@ import os
 from tkinter import *
 from tkinter import ttk
 from tkinter import scrolledtext
+from tkinter import messagebox
 
 class SerialThroughput:
     def __init__(self):
@@ -306,6 +307,10 @@ class SerialThroughput:
             else:
                 self.result_box.insert(END, "\nTest Cancel Failed!\n")
         else:
+            if (receiver_port == sender_port) and (mode == "Poll Response"):
+                messagebox.showerror("Configuration Error", "You must select two different serial ports for Poll Response mode")
+                return
+
             self.stop_threads = False
             self.mode = mode
             
