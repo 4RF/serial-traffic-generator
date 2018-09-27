@@ -12,6 +12,7 @@ import serial.tools.list_ports
 import random
 import threading
 import configparser
+import os
 
 from tkinter import *
 from tkinter import ttk
@@ -48,6 +49,18 @@ class SerialThroughput:
         top.geometry("500x700")
             
         top.title("4RF Serial Traffic Generator 1.7")
+
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        try:
+            top.iconbitmap(os.path.join(base_path, 'serialtrafficgenerator.ico'))
+        except:
+            # Don't fail if icon file is missing
+            pass
         
         top.columnconfigure(0, weight=1)
         top.columnconfigure(1, weight=4)
