@@ -31,7 +31,7 @@ class SerialThroughput:
         # pipeline_current: current number of packet between receiver and transmitter
         self.packet_received = None
         self.packet_received_timeout = 10
-        self.pipeline_max = 2
+        self.pipeline_max = 3
 
         self.start_time = None
         self.last_rx_time = None
